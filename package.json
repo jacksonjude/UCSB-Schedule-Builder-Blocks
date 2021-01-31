@@ -1,5 +1,5 @@
 {
-  "name": "csb_w21_1",
+  "name": "ucsb_schedule_builder",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -7,7 +7,10 @@
     "@testing-library/react": "^11.2.3",
     "@testing-library/user-event": "^12.6.0",
     "react": "^17.0.1",
+    "react-apple-signin-auth": "^0.0.7",
     "react-dom": "^17.0.1",
+    "react-google-login": "^5.2.2",
+    "react-grid-layout": "^1.2.0",
     "react-scripts": "4.0.1",
     "web-vitals": "^0.2.4"
   },
