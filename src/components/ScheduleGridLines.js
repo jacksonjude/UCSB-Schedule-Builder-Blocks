@@ -55,11 +55,17 @@ function ScheduleGridLines(props)
   }
 
   return (
-    gridLines.map(lineData => {
-      return (
-        <div key={lineData.key} style={lineData.style}></div>
-      )
-    })
+    <div>
+      <div style={{borderRadius:20}}>
+        {
+          gridLines.map(lineData => {
+            return (
+              <div key={lineData.key} style={lineData.style}></div>
+            )
+          })
+        }
+      </div>
+    </div>
   )
 }
 
