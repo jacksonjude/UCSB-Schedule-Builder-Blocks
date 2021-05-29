@@ -1,214 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import GridLayout from 'react-grid-layout'
 import ScheduleGridLines from "./ScheduleGridLines"
 import ScheduleGridPlaceholders from "./ScheduleGridPlaceholders"
 
-// Testing Vars
+import { getNumberIterator, addStyleProperties } from "../misc-util"
+import * as gridConstants from "../grid-constants"
 
-// ECON 10A is a strange one (W21)
+var shouldFixLayout = true
 
-/*
+var currentDropCourseID
 
-Course:
-{
-  id: string, id of the course
-  name: string, name of the course
-  selectedLectureID: string, id of the currently selected lecture id
-  selectedSectionID: string, id of the currently selected section id
-  lecturesPerWeek: int, number of lectures that happen per week
-  sectionPerWeek: int, number of sections that happen per week
-  lectures:
-  [
-    {
-      id: string, id of the lecture
-      teacher: string, teacher of the lecture
-      times:
-      {
-        (weekday letter index):
-        {
-          hour: int, start hour of lecture
-          minute: int, start minute of lecture
-          duration: int, lecture length in minutes
-        }
-        // End of time
-      }
-      // End of times
-      sections:
-      [
-        {
-          id: string, id of section
-          teacher: string, teacher of section
-          times:
-          {
-            (weekday letter index):
-            {
-              hour: int, start hour of section
-              minute: int, start minute of section
-              duration: int, lecture length in minutes
-            }
-            // End of time
-          }
-          // End of times
-        }
-        // End of section
-      ]
-      // End of sections
-    }
-    // End of lecture
-  ]
-  // End of lectures
-}
-// End of course
-
-*/
-
-const kLecture = "lecture"
-const kSection = "section"
-
-const weekColumns = [
-  {id: "monday", letter: "M", name: "Monday"},
-  {id: "tuesday", letter: "T", name: "Tuesday"},
-  {id: "wednesday", letter: "W", name: "Wednesday"},
-  {id: "thursday", letter: "R", name: "Thursday"},
-  {id: "friday", letter: "F", name: "Friday"}
-]
-
-const rowHeight = 4
-const columnCount = 5
-const gridWidth = 1200
-const gridMargins = [10, 0]
-
-const timeStart = {hour: 7, minute: 45}
-const timeEnd = {hour: 22, minute: 15}
-const timeIncrement = 5
-
-const totalRows = getTimeDifference(timeStart, timeEnd)/timeIncrement
-
-const testCourses = [
-  {id: "HIST20", name: "History 20", selectedLectureID: null, selectedSectionID: null, lecturesPerWeek: 3, sectionsPerWeek: 1, lectures: [
-    {id: "100", teacher: "Mark", times: {
-      "M":{hour: 9, minute: 0, duration: 50}, "W":{hour: 9, minute: 0, duration: 50}, "F":{hour: 9, minute: 0, duration: 50}
-    }, sections: [
-      {id: "101", teacher: "Gary", times: {
-        "W":{hour: 13, minute: 0, duration: 50}
-      }},
-      {id: "102", teacher: "Larry", times: {
-        "R":{hour: 15, minute: 0, duration: 50}
-      }}
-    ]},
-    {id: "110", teacher: "James", times: {
-      "M":{hour: 16, minute: 0, duration: 50}, "W":{hour: 16, minute: 0, duration: 50}, "F":{hour: 16, minute: 0, duration: 50}
-    }, sections: [
-      {id: "111", teacher: "Perry", times: {
-        "T":{hour: 11, minute: 0, duration: 50}
-      }},
-      {id: "112", teacher: "Carrey", times: {
-        "M":{hour: 15, minute: 0, duration: 50}
-      }}
-    ]}
-  ]},
-  {id: "PHYS1", name: "Physics 1", selectedLectureID: null, selectedSectionID: null, lecturesPerWeek: 2, sectionsPerWeek: 1, lectures: [
-    {id: "300", teacher: "Fred", times: {
-      "T":{hour: 12, minute: 0, duration: 100}, "R":{hour: 12, minute: 0, duration: 100}
-    }, sections: [
-      {id: "301", teacher: "Rachel", times: {
-        "W":{hour: 12, minute: 0, duration: 50}
-      }},
-      {id: "302", teacher: "Jeremy", times: {
-        "R":{hour: 11, minute: 0, duration: 50}
-      }}
-    ]},
-    {id: "310", teacher: "Louis", times: {
-      "W":{hour: 10, minute: 0, duration: 100}, "F":{hour: 10, minute: 0, duration: 100}
-    }, sections: [
-      {id: "311", teacher: "Jerry", times: {
-        "F":{hour: 17, minute: 0, duration: 50}
-      }},
-      {id: "312", teacher: "Terry", times: {
-        "F":{hour: 15, minute: 0, duration: 50}
-      }}
-    ]}
-  ]}
-]
-
-function getNumberIterator(count)
-{
-  return [...Array(count).keys()]
-}
-
-// Converter Functions
-
-function getTimeDifference(time1, time2)
-{
-  var time1Minutes = 60*time1.hour+time1.minute
-  var time2Minutes = 60*time2.hour+time2.minute
-  return time2Minutes-time1Minutes
-}
-
-function getTime(row)
-{
-  var minutesAfterStart = row*timeIncrement
-  return {hour: timeStart.hour+Math.floor(minutesAfterStart/60)+Math.floor((timeStart.minute+minutesAfterStart%60)/60), minute: (timeStart.minute+minutesAfterStart%60)%60} // Have to add extra hour if timeStart.minute+minutesAfterStart%60 is greater than 60
-}
-
-function getRow(time)
-{
-  return getTimeDifference(timeStart, time)/timeIncrement
-}
-
-var layout = [ // TODO: Update layout to have selected course items
-
-]
-
-testCourses.forEach(course => {
-  if (course.lectures.length === 0) { return }
-
-  var firstLecture = course.lectures[0]
-  course.selectedLectureID = firstLecture.id
-
-  for (var segmentNumber in getNumberIterator(course.lecturesPerWeek))
-  {
-    var fullSegmentID = course.id + "-" + kLecture + "-" + segmentNumber
-    var lectureDayLetter = Object.keys(firstLecture.times)[segmentNumber]
-    var lectureTime = firstLecture.times[lectureDayLetter]
-    layout.push({i: fullSegmentID, x: weekColumns.findIndex(weekColumn => weekColumn.letter === lectureDayLetter), y: getRow(lectureTime), w: 1, h: lectureTime.duration/(timeIncrement+gridMargins[1])})
-  }
-
-  var firstSection = firstLecture.sections[0]
-  course.selectedSectionID = firstSection.id
-
-  for (var segmentNumber in getNumberIterator(course.sectionPerWeek))
-  {
-    var fullSegmentID = course.id + "-" + kSection + "-" + segmentNumber
-    var sectionDayLetter = Object.keys(firstSection.times)[segmentNumber]
-    var sectionTime = firstSection.times[sectionDayLetter]
-    layout.push({i: fullSegmentID, x: weekColumns.findIndex(weekColumn => weekColumn.letter === sectionDayLetter), y: getRow(lectureTime), w: 1, h: sectionTime.duration/(timeIncrement+gridMargins[1])})
-  }
-})
-
-// const testItemSize = 10
-// const testValidTimes =
-// {
-//   "M":[
-//     {hour: 10, minute: 30},
-//     {hour: 14, minute: 25},
-//     {hour: 17, minute: 40}
-//   ],
-//   "T":[
-//     {hour: 13, minute: 0},
-//     {hour: 10, minute: 0}
-//   ],
-//   "W":[
-//     {hour: 10, minute: 30},
-//     {hour: 14, minute: 25},
-//     {hour: 17, minute: 40}
-//   ],
-//   "R":[
-//     {hour: 13, minute: 0}
-//   ],
-//   "F":[]
-// }
+var gridTimes = []
+var gridWeekdays = []
 
 function ScheduleGrid(props)
 {
@@ -231,8 +35,8 @@ function ScheduleGrid(props)
     position: "relative",
     top: "0",
     border: "1px solid white",
-    height: totalRows*(rowHeight+gridMargins[1]),
-    width: gridWidth,
+    height: gridConstants.totalRows*(gridConstants.rowHeight+gridConstants.gridMargins[1]),
+    width: gridConstants.gridWidth,
     borderRadius: 5
   }
 
@@ -253,24 +57,13 @@ function ScheduleGrid(props)
 
   const gridTimeStyle = {
     float: "left",
-    height: totalRows*(rowHeight+gridMargins[1]),
+    height: gridConstants.totalRows*(gridConstants.rowHeight+gridConstants.gridMargins[1]),
     color: "white"
   }
 
   const gridWeekdayStyle = {
-    width: gridWidth+gridContainerStyle.marginLeft+gridMargins[0],
+    width: gridConstants.gridWidth+gridContainerStyle.marginLeft+gridConstants.gridMargins[0],
     color: "white"
-  }
-
-  function addStyleProperties(styleProperties, stylesToAdd)
-  {
-    for (var key in stylesToAdd)
-    {
-      if (!(key in styleProperties))
-      {
-        styleProperties[key] = stylesToAdd[key]
-      }
-    }
   }
 
   // Layout Creation
@@ -280,7 +73,7 @@ function ScheduleGrid(props)
     var validSegmentTimes = {"M":[], "T":[], "W":[], "R":[], "F":[]}
     switch (segmentType)
     {
-      case kLecture:
+      case gridConstants.kLecture:
       courseObject.lectures.forEach(lecture => {
         var daysWithLecture = Object.keys(lecture.times)
         if (daysWithLecture.length <= segmentNumber) { return }
@@ -290,7 +83,7 @@ function ScheduleGrid(props)
       })
       break
 
-      case kSection:
+      case gridConstants.kSection:
       if (courseObject.selectedLectureID == null) { return validSegmentTimes }
       courseObject.lectures.find(lecture => {
         return lecture.id === courseObject.selectedLectureID
@@ -320,11 +113,11 @@ function ScheduleGrid(props)
   {
     var validAssociatedSegmentTimes = getValidSegmentTimes(course, segmentType, associatedSegmentNumber)
 
-    if (segmentType == kLecture && !course.selectedLectureID || segmentType == kSection && !course.selectedSectionID) { return }
+    if (segmentType == gridConstants.kLecture && !course.selectedLectureID || segmentType == gridConstants.kSection && !course.selectedSectionID) { return }
 
     Object.keys(validAssociatedSegmentTimes).forEach(dayLetter => {
       validAssociatedSegmentTimes[dayLetter] = validAssociatedSegmentTimes[dayLetter].filter(time => {
-        return time.id == (segmentType == kLecture ? course.selectedLectureID : course.selectedSectionID)
+        return time.id == (segmentType == gridConstants.kLecture ? course.selectedLectureID : course.selectedSectionID)
       })
     })
 
@@ -338,7 +131,7 @@ function ScheduleGrid(props)
     var closestTime
     var minTimeDifference
     validTimes.forEach(time => {
-      var currentTimeDifference = Math.abs(getTimeDifference(currentTime, time))
+      var currentTimeDifference = Math.abs(gridConstants.getTimeDifference(currentTime, time))
 
       if (minTimeDifference == null || currentTimeDifference <  minTimeDifference)
       {
@@ -355,16 +148,16 @@ function ScheduleGrid(props)
   {
     var rowToCheck = referenceLayoutItem ? referenceLayoutItem.y : layoutItem.y
 
-    var newItemTime = getTime(rowToCheck)
+    var newItemTime = gridConstants.getTime(rowToCheck)
     var newClosestValidTime = getClosestTime(newItemTime, validTimes)
 
     if (newClosestValidTime == null) { return } //TODO: Eject this item to outside
 
-    var newClosestValidTimeRow = getRow(newClosestValidTime)
+    var newClosestValidTimeRow = gridConstants.getRow(newClosestValidTime)
 
-    if (layoutItem.y != getRow(newClosestValidTime))
+    if (layoutItem.y != gridConstants.getRow(newClosestValidTime))
     {
-      layoutItem.y = getRow(newClosestValidTime)
+      layoutItem.y = gridConstants.getRow(newClosestValidTime)
     }
     else if (referenceLayoutItem != null)
     {
@@ -379,44 +172,80 @@ function ScheduleGrid(props)
     }
   }
 
-  // Drag Handlers
+  function setLayoutItemToValidColumn(newItem, oldItem, validWeekTimes)
+  {
+    if (validWeekTimes[gridConstants.weekColumns[newItem.x].letter].length == 0)
+    {
+      if (oldItem == null || validWeekTimes[gridConstants.weekColumns[oldItem.x].letter].length == 0)
+      {
+        for (var dayLetter in validWeekTimes) // Could use something like this block for re-organization
+        {
+          if (validWeekTimes[dayLetter].length > 0)
+          {
+            newItem.x = gridConstants.weekColumns.findIndex(weekday => weekday.letter === dayLetter)
+            break
+          }
+        }
+      }
+      else if (oldItem)
+      {
+        newItem.x = oldItem.x
+      }
+    }
+  }
+
+  function ejectOverlappingItems()
+  {
+
+  }
+
+  // Drag / Drop Handlers
 
   const [ customPlaceholders, setPlaceholders ] = useState([])
 
   var dragHandler = (layout, oldItem, newItem, placeholder, event, htmlElement) => {
     // TODO: Add detection for column change and set x
 
-    var [courseID, segmentType, segmentNumber] = splitSegmentIDParts(newItem.i)
-    var courseObject = testCourses.find(course => {
+    var itemID = newItem.i
+
+    if (itemID === gridConstants.newDroppingElementID)
+    {
+      // TODO: Set item to correct size if not already done, could attach multiple divs and position them according to selected placeholder
+      itemID = currentDropCourseID + "-" + gridConstants.kLecture + "-" + 0
+    }
+
+    var [courseID, segmentType, segmentNumber] = splitSegmentIDParts(itemID)
+    var courseObject = props.testCourses.find(course => {
       return course.id === courseID
     })
+    if (courseObject == null) { return }
     var validSegmentTimes = getValidSegmentTimes(courseObject, segmentType, segmentNumber)
 
     var placeholders = []
     Object.values(validSegmentTimes).forEach((timesForColumn, i) => {
       timesForColumn.forEach(item => {
-        placeholders.push({column: i, row: getRow(item), numRowSize: newItem.h, color: "deepskyblue"}) // TODO: Set color to subject color
+        placeholders.push({column: i, row: gridConstants.getRow(item), numRowSize: newItem.h, color: "deepskyblue"}) // TODO: Set color to subject color
       })
     })
     setPlaceholders(placeholders)
 
     if (oldItem.y !== newItem.y || oldItem.x !== newItem.x)
     {
-      if (validSegmentTimes[weekColumns[placeholder.x].letter].length == 0)
+      if (validSegmentTimes[gridConstants.weekColumns[placeholder.x].letter].length == 0)
       {
         placeholder.x = oldItem.x
-        setLayoutItemToClosestTime(placeholder, validSegmentTimes[weekColumns[oldItem.x].letter])
+        setLayoutItemToClosestTime(placeholder, validSegmentTimes[gridConstants.weekColumns[oldItem.x].letter])
       }
       else
       {
-        setLayoutItemToClosestTime(placeholder, validSegmentTimes[weekColumns[placeholder.x].letter])
+        setLayoutItemToClosestTime(placeholder, validSegmentTimes[gridConstants.weekColumns[placeholder.x].letter])
       }
     }
 
     var selectedSegmentID
-    var placeholderDay = weekColumns[placeholder.x]
-    var placeholderTime = getTime(placeholder.y)
-    if (segmentType == kLecture)
+    var placeholderDay = gridConstants.weekColumns[placeholder.x]
+    var placeholderTime = gridConstants.getTime(placeholder.y)
+    if (segmentType == gridConstants.kLecture)
     {
       courseObject.lectures.forEach(lecture => {
         Object.keys(lecture.times).forEach(dayLetter => {
@@ -429,7 +258,7 @@ function ScheduleGrid(props)
 
       courseObject.selectedLectureID = selectedSegmentID
     }
-    else if (segmentType == kSection && courseObject.selectedLectureID)
+    else if (segmentType == gridConstants.kSection && courseObject.selectedLectureID)
     {
       var lecture = courseObject.lectures.find(lecture => lecture.id == courseObject.selectedLectureID)
       lecture.sections.forEach(section => {
@@ -444,7 +273,7 @@ function ScheduleGrid(props)
       courseObject.selectedSectionID = selectedSegmentID
     }
 
-    if (segmentType == kLecture ? courseObject.lecturesPerWeek > 1 : courseObject.sectionsPerWeek > 1) // TODO: Replace with check of associated course(es) later; Add column checking and move x accordingly
+    if (segmentType == (gridConstants.kLecture ? courseObject.lecturesPerWeek > 1 : courseObject.sectionsPerWeek > 1) && htmlElement.dataset.associd) // TODO: Replace with check of associated course(es) later; Add column checking and move x accordingly
     {
       var relativeY = /(\d+)px.*?(\d+)px/.exec(htmlElement.style.transform)[2]
 
@@ -470,7 +299,7 @@ function ScheduleGrid(props)
           Object.keys(validAssociatedSegmentTimes).forEach(dayLetter => {
             if (validAssociatedSegmentTimes[dayLetter].length > 0)
             {
-              columnWithValidTime = weekColumns.findIndex(weekday => weekday.letter === dayLetter)
+              columnWithValidTime = gridConstants.weekColumns.findIndex(weekday => weekday.letter === dayLetter)
             }
           })
           // Move associated segment to columnWithValidTime via translation, probably in the setTimeout call after resetting the transitionDuration
@@ -485,35 +314,18 @@ function ScheduleGrid(props)
     setPlaceholders([])
 
     var [courseID, segmentType, segmentNumber] = splitSegmentIDParts(newItem.i)
-    var courseObject = testCourses.find(course => {
+    var courseObject = props.testCourses.find(course => {
       return course.id === courseID
     })
 
     var validSegmentTimes = getValidSegmentTimes(courseObject, segmentType, segmentNumber)
 
-    if (validSegmentTimes[weekColumns[newItem.x].letter].length == 0)
-    {
-      if (validSegmentTimes[weekColumns[oldItem.x].letter].length == 0)
-      {
-        for (var dayLetter in validSegmentTimes) // Could use something like this block for re-organization; USE THIS BLOCK IN THE OTHER HANDLER TO MOVE TRUE PLACEHOLDER
-        {
-          if (validSegmentTimes[dayLetter].length > 0)
-          {
-            newItem.x = weekColumns.findIndex(weekday => weekday.letter === dayLetter)
-            break
-          }
-        }
-      }
-      else
-      {
-        newItem.x = oldItem.x
-      }
-    }
-    setLayoutItemToClosestTime(newItem, validSegmentTimes[weekColumns[newItem.x].letter])
+    setLayoutItemToValidColumn(newItem, oldItem, validSegmentTimes)
+    setLayoutItemToClosestTime(newItem, validSegmentTimes[gridConstants.weekColumns[newItem.x].letter])
 
     //TODO: Eject any items that are in the way
 
-    if (segmentType == kLecture ? courseObject.lecturesPerWeek > 1 : courseObject.sectionsPerWeek > 1) // TODO: Replace with check of associated course later
+    if (segmentType == (gridConstants.kLecture ? courseObject.lecturesPerWeek > 1 : courseObject.sectionsPerWeek > 1) && htmlElement.dataset.associd) // TODO: Replace with check of associated course later
     {
       var associatedIDList = htmlElement.dataset.associd.split(",")
 
@@ -532,41 +344,67 @@ function ScheduleGrid(props)
         Object.keys(validAssociatedSegmentTimes).forEach(dayLetter => {
           if (validAssociatedSegmentTimes[dayLetter].length > 0)
           {
-            columnWithValidTime = weekColumns.findIndex(weekday => weekday.letter === dayLetter)
+            columnWithValidTime = gridConstants.weekColumns.findIndex(weekday => weekday.letter === dayLetter)
           }
         })
 
         associatedItem.x = columnWithValidTime
 
-        setLayoutItemToClosestTime(associatedItem, validAssociatedSegmentTimes[weekColumns[columnWithValidTime].letter], newItem)
+        setLayoutItemToClosestTime(associatedItem, validAssociatedSegmentTimes[gridConstants.weekColumns[columnWithValidTime].letter], newItem)
       })
+    }
+
+    if (segmentType == gridConstants.kLecture)
+    {
+      for (var i in getNumberIterator(courseObject.sectionsPerWeek))
+      {
+        var validSectionTimes = getValidSegmentTimes(courseObject, gridConstants.kSection, i)
+        var sectionItem = layout.find(item => item.i === courseObject.id + "-" + gridConstants.kSection + "-" + i)
+        if (sectionItem == null) { continue }
+
+        setLayoutItemToValidColumn(sectionItem, null, validSectionTimes)
+        setLayoutItemToClosestTime(sectionItem, validSectionTimes[gridConstants.weekColumns[sectionItem.x].letter])
+      }
     }
   }
 
-  layout.forEach(item => {
+  var onDrop = (layout, layoutItem, event) => {
+    layoutItem.h = 20
+    layoutItem.i = currentDropCourseID + "-" + gridConstants.kLecture + "-0"
+
+    // TODO: Add associated items to "layout" here
+
+    props.setLayout(layout)
+
+    setPlaceholders([])
+  }
+
+  props.layout.forEach(item => {
     var [courseID, segmentType, segmentNumber] = splitSegmentIDParts(item.i)
-    var courseObject = testCourses.find(course => {
+    var courseObject = props.testCourses.find(course => {
       return course.id === courseID
     })
     var validSegmentTimes = getValidSegmentTimes(courseObject, segmentType, segmentNumber)
 
-    setLayoutItemToClosestTime(item, validSegmentTimes[weekColumns[item.x].letter])
+    var itemYBefore = item.y
+
+    setLayoutItemToClosestTime(item, validSegmentTimes[gridConstants.weekColumns[item.x].letter])
   })
 
-  var gridTimes = []
-  for (var rowOn in getNumberIterator(totalRows))
+  gridTimes = []
+  for (var rowOn in getNumberIterator(gridConstants.totalRows))
   {
-    var timeForRow = getTime(rowOn)
+    var timeForRow = gridConstants.getTime(rowOn)
     if (timeForRow.minute !== 0) { continue }
 
     var timeData = {style:{}}
-    if (rowOn < 60/timeIncrement)
+    if (rowOn < 60/gridConstants.timeIncrement)
     {
-      timeData.style.marginTop = rowOn*rowHeight-(16+2)/2
+      timeData.style.marginTop = rowOn*gridConstants.rowHeight-(16+2)/2
     }
     else
     {
-      timeData.style.marginTop = 60/timeIncrement*rowHeight-(16+2)
+      timeData.style.marginTop = 60/gridConstants.timeIncrement*gridConstants.rowHeight-(16+2)
     }
     timeData.style.textAlign = "right"
 
@@ -594,24 +432,24 @@ function ScheduleGrid(props)
     gridTimes.push(timeData)
   }
 
-  var gridWeekdays = []
-  for (var columnOn in getNumberIterator(columnCount))
+  gridWeekdays = []
+  for (var columnOn in getNumberIterator(gridConstants.columnCount))
   {
     var weekdayData = {style: {display: "inline-flex", justifyContent: "center", fontWeight: "bold"}}
     if (columnOn == 0)
     {
-      weekdayData.style.marginLeft = gridContainerStyle.marginLeft+gridMargins[0]+4 // +4 is manual shifting
-      weekdayData.style.marginRight = gridMargins[0]
-      weekdayData.style.width = gridWidth/columnCount-2*gridMargins[0]
+      weekdayData.style.marginLeft = gridContainerStyle.marginLeft+gridConstants.gridMargins[0]+4 // +4 is manual shifting
+      weekdayData.style.marginRight = gridConstants.gridMargins[0]
+      weekdayData.style.width = gridConstants.gridWidth/gridConstants.columnCount-2*gridConstants.gridMargins[0]
     }
     else
     {
-      weekdayData.style.marginLeft = gridMargins[0]
-      weekdayData.style.marginRight = gridMargins[0]
-      weekdayData.style.width = gridWidth/columnCount-2*gridMargins[0]-2 // -2 is manual shifting
+      weekdayData.style.marginLeft = gridConstants.gridMargins[0]
+      weekdayData.style.marginRight = gridConstants.gridMargins[0]
+      weekdayData.style.width = gridConstants.gridWidth/gridConstants.columnCount-2*gridConstants.gridMargins[0]-2 // -2 is manual shifting
     }
 
-    weekdayData.name = weekColumns[columnOn].name
+    weekdayData.name = gridConstants.weekColumns[columnOn].name
 
     gridWeekdays.push(weekdayData)
   }
@@ -644,20 +482,21 @@ function ScheduleGrid(props)
           }
         </div>
         <div style={gridContainerStyle}>
-          <ScheduleGridLines style={gridLinesStyle} width={gridWidth} columnCount={columnCount} rowCount={totalRows} rowHeight={rowHeight} margins={gridMargins} timeStart={timeStart} timeIncrement={timeIncrement} />
-          <ScheduleGridPlaceholders style={gridPlaceholdersStyle} placeholders={customPlaceholders} gridMargins={gridMargins} gridWidth={gridWidth} columnCount={columnCount} rowHeight={rowHeight} />
-          <GridLayout style={gridStyle} className="layout" layout={layout} cols={columnCount} rowHeight={rowHeight} width={gridWidth} margin={gridMargins} isBounded={true} isResizable={false} compactType={null} preventCollision={true} isDroppable={true} onDrag={dragHandler} onDragStop={dragStopHandler}>
+          <ScheduleGridLines style={gridLinesStyle} width={gridConstants.gridWidth} columnCount={gridConstants.columnCount} rowCount={gridConstants.totalRows} rowHeight={gridConstants.rowHeight} margins={gridConstants.gridMargins} timeStart={gridConstants.timeStart} timeIncrement={gridConstants.timeIncrement} />
+          <ScheduleGridPlaceholders style={gridPlaceholdersStyle} placeholders={customPlaceholders} gridMargins={gridConstants.gridMargins} gridWidth={gridConstants.gridWidth} columnCount={gridConstants.columnCount} rowHeight={gridConstants.rowHeight} />
+          <GridLayout style={gridStyle} className="layout" layout={props.layout} cols={gridConstants.columnCount} rowHeight={gridConstants.rowHeight} width={gridConstants.gridWidth} margin={gridConstants.gridMargins} isBounded={true} isResizable={false} compactType={null} preventCollision={true} isDroppable={true} onDrag={dragHandler} onDragStop={dragStopHandler} onDrop={onDrop}>
             {
-              layout.map(item => { // TODO: setup associd stuff (and in drag handling)
-                var itemBoxStyle = {minHeight: rowHeight*item.h+gridMargins[1]*8}
+              props.layout.map(item => { // TODO: setup associd stuff (and in drag handling)
+                var itemBoxStyle = {minHeight: gridConstants.rowHeight*item.h+gridConstants.gridMargins[1]*8}
                 addStyleProperties(itemBoxStyle, boxStyle)
 
                 var [courseID, segmentType, segmentNumber] = splitSegmentIDParts(item.i)
-                var courseObject = testCourses.find(course => {
+                var courseObject = props.testCourses.find(course => {
                   return course.id === courseID
                 })
+                if (courseObject == null) { return }
 
-                var numberOfSegmentsPerWeek = segmentType == kLecture ? courseObject.lecturesPerWeek : courseObject.sectionsPerWeek
+                var numberOfSegmentsPerWeek = segmentType == gridConstants.kLecture ? courseObject.lecturesPerWeek : courseObject.sectionsPerWeek
 
                 var associatedIDs = ""
                 for (var idNumber in getNumberIterator(numberOfSegmentsPerWeek))
@@ -676,6 +515,24 @@ function ScheduleGrid(props)
               })
             }
           </GridLayout>
+          <div>
+            <div
+              className="droppable-element"
+              draggable={true}
+              unselectable="on"
+              onDragStart={e => {
+                // this is a hack for firefox
+                // Firefox requires some kind of initialization
+                // which we can do by adding this attribute
+                // @see https://bugzilla.mozilla.org/show_bug.cgi?id=568313
+                e.dataTransfer.setData("text/plain", "")
+
+                currentDropCourseID = "HIST20"
+              }}
+            >
+              Droppable Element (Drag me!)
+            </div>
+          </div>
         </div>
       </div>
     </div>

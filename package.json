@@ -7,9 +7,9 @@
     "@testing-library/react": "^11.2.3",
     "@testing-library/user-event": "^12.6.0",
     "eslint-plugin-only-warn": "^1.0.2",
-    "react": "^17.0.1",
+    "react": "^16.4.0",
     "react-apple-signin-auth": "^0.0.7",
-    "react-dom": "^17.0.1",
+    "react-dom": "^16.4.0",
     "react-google-login": "^5.2.2",
     "react-grid-layout": "^1.2.0",
     "react-scripts": "4.0.1",
@@ -19,7 +19,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "npm run build && firebase deploy"
   },
   "eslintConfig": {
     "extends": [

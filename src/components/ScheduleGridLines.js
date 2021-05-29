@@ -1,3 +1,5 @@
+import { getNumberIterator, addStyleProperties } from "../misc-util"
+
 function ScheduleGridLines(props)
 {
   const verticalLineStyle = {
@@ -10,22 +12,6 @@ function ScheduleGridLines(props)
     position: "absolute",
     borderTop: "2px solid white",
     opacity: 0.2
-  }
-
-  function addStyleProperties(styleProperties, stylesToAdd)
-  {
-    for (var key in stylesToAdd)
-    {
-      if (!(key in styleProperties))
-      {
-        styleProperties[key] = stylesToAdd[key]
-      }
-    }
-  }
-
-  function getNumberIterator(count)
-  {
-    return [...Array(count).keys()]
   }
 
   var gridLines = []

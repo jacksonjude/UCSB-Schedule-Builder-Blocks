@@ -131,3 +131,5 @@ yarn-error.log*
 src/components/old/
 
 /.firebase
+
+/node_modules*
